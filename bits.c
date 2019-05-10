@@ -451,7 +451,8 @@ int dl19(void) {
  *   Rating: 4
  */
 int dl1(int x) {
-  return 2;
+  int m = x >> 31;
+  return (x ^ m) - m;
 }
 /*
  *
@@ -473,7 +474,7 @@ int dl1(int x) {
  *   Rating: 3
  */
 int dl20(int x) {
-  return 2;
+	return (((x << 2)-x)>>2) | !!(x>>31); 
 }
 /* 
  * Reproduce the functionality of the following C function
@@ -652,7 +653,8 @@ int dl6(int x) {
  *   Rating: 4 
  */
 int dl7(int x) {
-  return 2;
+  int y = x >> 31;
+  return ((((~x+1)&~y)|(x&y))>>31)&1;
 }
 /* 
  *
@@ -670,7 +672,7 @@ int dl7(int x) {
  *   Rating: 1
  */
 int dl8(int x, int y) {
-  return 2;
+  return ~(~x|~y);
 }
 /*
  *   
