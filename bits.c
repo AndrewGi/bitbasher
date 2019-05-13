@@ -235,7 +235,12 @@ int dl12(int x, int y) {
  *   Rating: 4
  */
 int dl13(int x) {
-  return 2;
+  x ^= x >> 16;
+  x ^= x >> 8;
+  x ^= x >> 4;
+  x ^= x >> 2;
+  x ^= x >> 1;
+  return x&1;
 }
 /* 
  *
@@ -338,8 +343,8 @@ nt dl15(int x, int n, int m) {
 int dl15(int x, int n, int m) {
     int np = n<<3;
     int mp = m<<3;
-    unsigned nhole = 0xFF << np;
-    unsigned mhole = 0xFF << mp;
+    int nhole = 0xFF << np; //types were unsigned
+    int mhole = 0xFF << mp; //types were unsigned
     int nmask = (x&nhole) >> np;
     x&= ~nhole;
     int mmask = (x&mhole) >> mp;
@@ -436,7 +441,9 @@ int dl18(int x, int n) {
  *   Rating: 1
  */
 int dl19(void) {
-  return 2;
+ unsigned p1 = 0x55 | 0x55<<8;
+ return p1 | (p1 << 16);
+   
 }
 /* 
  *   reproduce the functionality of the following C function
@@ -563,6 +570,7 @@ int dl24(int x) {
  *   Rating: 3
  */
 int dl2(int x, int y) {
+  
   return 2;
 }
 /* 
@@ -581,7 +589,13 @@ int dl2(int x, int y) {
  *   Rating: 2
  */
 int dl3(int x) {
-  return 2;
+  //return true if no even bit sets
+  x |= 0xAAAAAAAA; //set all odd bits to one
+  x &= x >> 16;
+  x &= x >> 8;
+  x &= x >> 4;
+  x &= x >> 2;
+  return  (x & x >> 1)&1;
 }
 /* 
  *   reproduce the functionality of the following C function
@@ -617,7 +631,14 @@ int dl4(int x) {
  *   Rating: 2
  */
 int dl5(int x) {
-  return 2;
+  //return true if even bit sets
+  x &= 0x55555555; //only get even bits
+  x |= x >> 16;
+  x |= x >> 8;
+  x |= x >> 4;
+  x |= x >> 2;
+  x |= x >> 1;  
+  return x&1;
 }
 /* 
  * 
@@ -636,7 +657,13 @@ int dl5(int x) {
  *   Rating: 2
  */
 int dl6(int x) {
-    return 2;
+  //return true if odd bit is set
+  x &= 0xAAAAAAAA; //only get odd bits
+  x |= x >> 16;
+  x |= x >> 8;
+  x |= x >> 4;
+  x |= x >> 2;
+  return (x | x >> 1)&1;
 }
 /* 
 * 
@@ -653,8 +680,9 @@ int dl6(int x) {
  *   Rating: 4 
  */
 int dl7(int x) {
+  //return the sign bit of -abs(x)
   int y = x >> 31;
-  return ((((~x+1)&~y)|(x&y))>>31)&1;
+  return ~((((~x+1)&~y)|(x&y))>>31)&1;
 }
 /* 
  *
@@ -692,5 +720,23 @@ int dl8(int x, int y) {
  *   Rating: 4
  */
 int dl9(int x) {
-  return 2;
+  //Seems to be a popcnt
+  //very dirty code because of 0xFF constant rule :(
+  int m1 = 0x55;
+  int m2 = 0x33;
+  int m3 = 0x0F;
+  int m4 = 0xFF | 0xFF<<16;
+  int m5 = 0xFF | 0xFF<<8;
+  m1 |= m1 << 8;
+  m1 |= m1 << 16;
+  m2 |= m2 << 8;
+  m2 |= m2 << 16;
+  m3 |= m3 << 8;
+  m3 |= m3 << 16;  
+  x = (x & m1) + ((x >> 1) & m1);
+  x = (x & m2) + ((x >> 2) & m2);
+  x = (x & m3) + ((x >> 4) & m3);
+  x = (x & m4) + ((x >> 8) & m4);
+
+  return  (x & m5) + ((x >> 16) & m5);
 }
