@@ -402,7 +402,10 @@ int dl17(int x) {
  *   Rating: 2
  */
 int dl18(int x, int n) {
-    return (x>>n) & ~((x>>31)&!!n);
+	
+    int r = x&((1<<n) + ~0);
+    return (x>>n)+!!(r & x >>31);
+    
 }
 /* 
  *
@@ -468,7 +471,9 @@ int dl1(int x) {
  *   Rating: 3
  */
 int dl20(int x) {
-	return (((x << 2)-x)>>2) | !!(x>>31); 
+  int x3 = (x<<1)+x;
+  int r = x3 & 3;
+  return (x3 >> 2) + !!(r&(x3>>31)); 
 }
 /* 
  * Reproduce the functionality of the following C function
@@ -485,7 +490,27 @@ int dl20(int x) {
  *   Rating: 4
  */
 unsigned dl21(unsigned uf) {
-  return 2;
+  const unsigned sign_mask = 1 << 31;
+  const unsigned exponent_mask = 0xFF << 23;
+  const unsigned mantissa_mask = ~(exponent_mask|sign_mask);
+  unsigned sign = uf&sign_mask;
+  unsigned exponent = (uf&exponent_mask) >> 23;
+  unsigned mantissa = (uf&mantissa_mask);
+  if (exponent == 0xFF) {
+   return uf;
+  } else if (exponent > 1) {
+   //normalized float
+   exponent -= 1;
+  } else { 
+   if (exponent == 1) 
+    mantissa |= 1 << 23; 
+   exponent = 0;
+  unsigned rb = mantissa & 1;
+  mantissa >>= 1;
+  if (mantissa&1)
+	mantissa += rb;
+  }
+  return sign | (exponent<<23) | mantissa; 
 }
 /* 
  * reproduce the functionality of the following C function
