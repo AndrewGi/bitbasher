@@ -328,14 +328,16 @@ int dl14(int x, int y) {
  *  Rating: 2
  */
 int dl15(int x, int n, int m) {
-    int np = n<<3;
-    int mp = m<<3;
-    int nhole = 0xFF << np; //types were unsigned
-    int mhole = 0xFF << mp; //types were unsigned
-    int nmask = ((x&nhole) >> np) & 0xFF;
-    x&= ~nhole;
-    int mmask = ((x&mhole) >> mp) & 0xFF;
-    x&= ~mhole;
+    int np, mp, nhole, mhole, nmask, mmask;
+    np = n<<3;
+    mp = m<<3;
+    nhole = 0xFF << np; //types were unsigned
+    mhole = 0xFF << mp; //types were unsigned
+    nmask = ((x&nhole) >> np) & 0xFF;
+    mmask;
+    x &= ~nhole;
+    mmask = ((x&mhole) >> mp) & 0xFF;
+    x &= ~mhole;
     return x | nmask << mp | mmask << np;
 }
 /* 
@@ -496,6 +498,7 @@ unsigned dl21(unsigned uf) {
   unsigned sign = uf&sign_mask;
   unsigned exponent = (uf&exponent_mask) >> 23;
   unsigned mantissa = (uf&mantissa_mask);
+  unsigned rb;
   if (exponent == 0xFF) {
    return uf;
   } else if (exponent > 1) {
@@ -505,7 +508,7 @@ unsigned dl21(unsigned uf) {
    if (exponent == 1) 
     mantissa |= 1 << 23; 
    exponent = 0;
-  unsigned rb = mantissa & 1;
+  rb = mantissa & 1;
   mantissa >>= 1;
   if (mantissa&1)
 	mantissa += rb;
@@ -523,17 +526,17 @@ unsigned dl21(unsigned uf) {
  *   Rating: 4
  */
 unsigned dl22(int x) {
-  const unsigned exponent_test_bit = 1 << 23;
+  unsigned a, nx, exponent, s;
   if (x == 0)
     return 0;
-  unsigned s = (0x80<<24);
-  unsigned nx = x&s;
+  s = (0x80<<24);
+  nx = x&s;
   if (nx)
     x = -x;
-  unsigned a = x;
-  unsigned exponent = 126;
+  a = x;
+  exponent = 126;
   while(a){
-   exponent++;
+  exponent++;
   a >>= 1;
   }
   nx |= exponent<<23;
@@ -604,14 +607,15 @@ unsigned dl23(unsigned uf) {
 int dl24(int x) {
   const int mask = x >> 31;
   int absx = (x + mask)^mask;
-  int v = absx - (mask&1);
-  unsigned r = !!(v & ~0xFFFF) << 4; v >>= r;
+  unsigned v = absx - (mask&1) + (~x&1);
+  unsigned r = !!(x&(1<<31)) << 5; v >>= r;
+  r = !!(v & ~0xFFFF) << 4; v >>= r;
   v &= ~(0xFFFF<<16);
   unsigned shift = (v > 0xFF) << 3; v >>= shift; r |= shift;
   shift = (v > 0xF) << 2; v >>= shift; r |= shift;
   shift = (v > 0x3   ) << 1; v >>= shift; r |= shift;
   r |= (v >> 1);
-  return x==-2147483648?32:(r + 1 + !!mask);
+  return x==-1?1:(r + 1 + (v&1));
 } 
 /* 
  *
@@ -650,12 +654,12 @@ int dl2(int x, int y) {
  */
 int dl3(int x) {
   //return true if no even bit sets
-  x |= 0xAAAAAAAA; //set all odd bits to one
+  //x |= 0xAAAAAAAA; //set all odd bits to one
   x &= x >> 16;
   x &= x >> 8;
   x &= x >> 4;
   x &= x >> 2;
-  return  (x & x >> 1)&1;
+  return  x&1;
 }
 /* 
  *   reproduce the functionality of the following C function
@@ -674,12 +678,12 @@ int dl3(int x) {
  */
 int dl4(int x) {
    //return true if no even bit sets
-  x |= 0x55555555; //set all odd bits to one
+  //x |= 0x55555555; //set all odd bits to one
   x &= x >> 16;
   x &= x >> 8;
   x &= x >> 4;
   x &= x >> 2;
-  return  (x & x >> 1)&1;
+  return  (x & 2)>>1;
 
 }
 /* 
@@ -699,12 +703,11 @@ int dl4(int x) {
  */
 int dl5(int x) {
   //return true if even bit sets
-  x &= 0x55555555; //only get even bits
+  //x &= 0x55555555; //only get even bits
   x |= x >> 16;
   x |= x >> 8;
   x |= x >> 4;
   x |= x >> 2;
-  x |= x >> 1;  
   return x&1;
 }
 /* 
@@ -725,12 +728,11 @@ int dl5(int x) {
  */
 int dl6(int x) {
   //return true if odd bit is set
-  x &= 0xAAAAAAAA; //only get odd bits
-  x |= x >> 16;
-  x |= x >> 8;
-  x |= x >> 4;
-  x |= x >> 2;
-  return (x | x >> 1)&1;
+  //x &= 0xAAAAAAAA; //only get odd bits
+  int pat = 0xAA;
+  pat |= pat << 8;
+  pat |= pat << 16;
+  return !!(x & pat);
 }
 /* 
 * 
