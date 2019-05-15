@@ -187,7 +187,7 @@ NOTES:
  *   Rating: 3
  */
 int dl10(int highbit, int lowbit) {
-  return 2;
+  return ~(~1 << highbit) & (~0 << lowbit);
 }
 /* 
  *
@@ -306,19 +306,6 @@ int dl14(int x, int y) {
  *   case 1:
  *     mmask = (x & 0xFF00) >> 8;
  *     x &= 0xFFFF00FF;
-nt dl15(int x, int n, int m) {
-    int np = n<<3;
-    int mp = m<<3;
-    int nhole = 0xFF << np;
-    int mhole = 0xFF << mp;
-    int nmask = (x&nhole) >> np;
-    x&= ~nhole;
-    int mmask = (x&mhole) >> mp;
-    x&= ~mhole;
-    return x | nmask << mp | mmask << np;
-}
- *     break;
- *   case 2:
  *     mmask = (x & 0xFF0000) >> 16;
  *     x &= 0xFF00FFFF;      
  *     break;
@@ -345,9 +332,9 @@ int dl15(int x, int n, int m) {
     int mp = m<<3;
     int nhole = 0xFF << np; //types were unsigned
     int mhole = 0xFF << mp; //types were unsigned
-    int nmask = (x&nhole) >> np;
+    int nmask = ((x&nhole) >> np) & 0xFF;
     x&= ~nhole;
-    int mmask = (x&mhole) >> mp;
+    int mmask = ((x&mhole) >> mp) & 0xFF;
     x&= ~mhole;
     return x | nmask << mp | mmask << np;
 }
