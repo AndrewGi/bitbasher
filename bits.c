@@ -431,7 +431,7 @@ int dl18(int x, int n) {
  *   Rating: 1
  */
 int dl19(void) {
- unsigned p1 = 0x55 | 0x55<<8;
+ int p1 = 0x55 | 0x55<<8;
  return p1 | (p1 << 16);
    
 }
@@ -449,7 +449,7 @@ int dl19(void) {
  */
 int dl1(int x) {
   int m = x >> 31;
-  return (x ^ m) - m;
+  return (x + m) ^ m;
 }
 /*
  *
@@ -523,7 +523,25 @@ unsigned dl21(unsigned uf) {
  *   Rating: 4
  */
 unsigned dl22(int x) {
-  return 2;
+  const unsigned exponent_test_bit = 1 << 23;
+  if (x == 0)
+    return 0;
+  unsigned s = (0x80<<24);
+  unsigned nx = x&s;
+  if (nx)
+    x = -x;
+  unsigned a = x;
+  unsigned exponent = 126;
+  while(a){
+   exponent++;
+  a >>= 1;
+  }
+  nx |= exponent<<23;
+  x <<= (157-exponent);
+  nx |= (x >> 7) & ((0x80<<16)-1);
+  nx += (0x40 & x) && (0x40 ^ (x & 0xff));
+
+		return nx;
 }
 /* 
  * reproduce the functionality of the following C function
@@ -540,7 +558,24 @@ unsigned dl22(int x) {
  *   Rating: 4
  */
 unsigned dl23(unsigned uf) {
-  return 2;
+  const unsigned sign_mask = 1 << 31;
+  const unsigned exponent_mask = 0xFF << 23;
+  const unsigned mantissa_mask = ~(exponent_mask|sign_mask);
+  unsigned sign = uf&sign_mask;
+  unsigned exponent = (uf&exponent_mask) >> 23;
+  unsigned mantissa = (uf&mantissa_mask);
+  if (exponent == 0xFF) {
+   return uf;
+  } else if (exponent >=1) {
+   //normalized float
+   exponent += 1;
+   if (exponent == 0xFF)
+     mantissa = 0;
+  } else {    
+   mantissa <<= 1;
+  }
+  return sign | (exponent<<23) | mantissa;
+
 }
 /*dl24 - return the minimum number of bits required to represent x in
  *             two's complement
@@ -565,9 +600,19 @@ unsigned dl23(unsigned uf) {
  *  Max ops: 90
  *  Rating: 4
  */
+                               
 int dl24(int x) {
-  return 0;
-}
+  const int mask = x >> 31;
+  int absx = (x + mask)^mask;
+  int v = absx - (mask&1);
+  unsigned r = !!(v & ~0xFFFF) << 4; v >>= r;
+  v &= ~(0xFFFF<<16);
+  unsigned shift = (v > 0xFF) << 3; v >>= shift; r |= shift;
+  shift = (v > 0xF) << 2; v >>= shift; r |= shift;
+  shift = (v > 0x3   ) << 1; v >>= shift; r |= shift;
+  r |= (v >> 1);
+  return x==-2147483648?32:(r + 1 + !!mask);
+} 
 /* 
  *
  *   reproduce the functionality of the following C function
@@ -582,8 +627,11 @@ int dl24(int x) {
  *   Rating: 3
  */
 int dl2(int x, int y) {
-  
-  return 2;
+  const int sign_mask = 1<<31;
+  int xs = x & sign_mask;
+  int ys = y & sign_mask;
+  int rs = (x + y)&sign_mask;
+  return !!(xs^ys)|(!(ys^rs)&!(xs^rs));
 }
 /* 
  *   reproduce the functionality of the following C function
@@ -625,7 +673,14 @@ int dl3(int x) {
  *   Rating: 2
  */
 int dl4(int x) {
-  return 2;
+   //return true if no even bit sets
+  x |= 0x55555555; //set all odd bits to one
+  x &= x >> 16;
+  x &= x >> 8;
+  x &= x >> 4;
+  x &= x >> 2;
+  return  (x & x >> 1)&1;
+
 }
 /* 
  *   reproduce the functionality of the following C function
