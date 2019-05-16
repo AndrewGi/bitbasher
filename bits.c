@@ -334,7 +334,6 @@ int dl15(int x, int n, int m) {
     nhole = 0xFF << np; //types were unsigned
     mhole = 0xFF << mp; //types were unsigned
     nmask = ((x&nhole) >> np) & 0xFF;
-    mmask;
     x &= ~nhole;
     mmask = ((x&mhole) >> mp) & 0xFF;
     x &= ~mhole;
@@ -605,17 +604,21 @@ unsigned dl23(unsigned uf) {
  */
                                
 int dl24(int x) {
-  const int mask = x >> 31;
-  int absx = (x + mask)^mask;
-  unsigned v = absx - (mask&1) + (~x&1);
-  unsigned r = !!(x&(1<<31)) << 5; v >>= r;
-  r = !!(v & ~0xFFFF) << 4; v >>= r;
-  v &= ~(0xFFFF<<16);
-  unsigned shift = (v > 0xFF) << 3; v >>= shift; r |= shift;
-  shift = (v > 0xF) << 2; v >>= shift; r |= shift;
-  shift = (v > 0x3   ) << 1; v >>= shift; r |= shift;
-  r |= (v >> 1);
-  return x==-1?1:(r + 1 + (v&1));
+  int mask, absx, r, v, shift, ffff;
+  ffff = ((0xFF << 8) | 0xFF);
+  mask = x >> 31;
+  absx = (x + mask)^mask;
+  v = absx + (~(mask&1)+1) + (~x&1);
+  r = !!(x&(1<<31)) << 5;
+  v >>= r;
+  r = !!(v & ~ffff) << 4;
+  v >>= r;
+  v &= ~(ffff<<16);
+  shift = !!(v & ~0xFF) << 3; v >>= shift; r |= shift;
+  shift = !!(v & ~0xF ) << 2; v >>= shift; r |= shift;
+  shift = !!(v & ~0x3 ) << 1; v >>= shift; r |= shift;
+  r |= (v >> 1);	
+  return (r + (!mask| !!(absx & (absx + ~0))) + !!x);
 } 
 /* 
  *
